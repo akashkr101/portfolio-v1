@@ -1,0 +1,144 @@
+pipeline {
+    agent any
+    environment {
+        // Detect branch name
+        BRANCH_NAME = "${env.BRANCH_NAME ?: env.GIT_BRANCH}"
+
+        APP_NAME = "portfolio-v2"
+		RELEASE = "2.0.0"
+		DOCKER_USER = "akash63"
+		DOCKER_PASS = "dockerhub-credentials"
+		IMAGE_NAME = "${DOCKER_USER}" +"/"+ "${APP_NAME}"
+		IMAGE_TAG = "${RELEASE}-${BUILD_NUMBER}"
+    }
+
+    stages {
+        stage('checkout') {
+            steps {
+                //checkout scmGit(branches: [[name: '*/dev']], extensions: [], userRemoteConfigs: [[credentialsId: 'pipeline', url: 'https://github.com/akashkr101/portfolio.git']])
+                checkout scmGit(branches: [[name: '*/dev']], extensions: [], userRemoteConfigs: [[credentialsId: 'Jenkins-webhooks', url: 'https://github.com/akashkr101/portfolio.git']])
+            }
+        }
+        stage('directory info') {
+            steps {
+                sh 'ls'
+                sh 'pwd'
+                sh 'ls -lrt'
+            }
+        }
+        stage('Install & Build') {
+            steps {
+                sh 'npm install'
+                sh 'npm run build'
+            }
+        }
+        stage('Prepare SonarQube analysis') {
+            steps {
+                script {
+                    echo "Running SonarQube analysis for branch: ${BRANCH_NAME}"
+                    if (BRANCH_NAME == 'origin/dev') {
+                        env.SONAR_PROJECT_KEY = 'portfolio-dev'
+                        env.SONAR_ENVIRONMENT = 'dev'
+                    } else if (BRANCH_NAME == 'origin/qa') {
+                        env.SONAR_PROJECT_KEY = 'portfolio-qa'
+                        env.SONAR_ENVIRONMENT = 'qa'
+                    } else {
+                        error("Unknown branch: ${BRANCH_NAME}")
+                    }
+                }
+            }
+        }
+        stage('Verify sonar-scanner') {
+            steps {
+                echo 'new stage'
+                sh 'sonar-scanner --version'  // Check if sonar-scanner is available
+            }
+        }
+        stage('Run SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv('Sonarqube') { // Name of your SonarQube server configured in Jenkins
+                    sh '''
+                    echo "Running sonar-scanner with the following parameters:"
+                    echo "sonar.projectKey=${SONAR_PROJECT_KEY}"
+                    echo "sonar.environment=${SONAR_ENVIRONMENT}"
+                    sonar-scanner \
+                      -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+                      -Dsonar.environment=${SONAR_ENVIRONMENT} \
+                      -Dsonar.sources=src
+                    '''
+                }
+            }
+        }
+        stage('Clean Up') {
+            steps {
+                script {
+                    sh '''
+                        # Get a list of all running containers
+                        containers=$(docker ps --filter "ancestor=portfolio-v2" -q)
+                        # Check if there are any running containers
+                        if [ -z "$containers" ]; then
+                            echo "No 'portfolio' are running."
+                        else
+                            echo "Stopping and removing portfolio containers."
+                            docker stop $containers
+                            docker rm $containers
+                        fi
+                    '''
+                    sh '''
+                        # Get a list of all Docker images
+                        images=$(docker images --filter "reference=*portfolio*" -q)
+                        # Check if there are any Docker images
+                        if [ -z "$images" ]; then
+                            echo "No 'portfolio' images found."
+                        else
+                            echo "Removing 'portfolio' images."
+                            docker rmi -f $images
+                        fi
+                    '''
+                }
+            }
+        }
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    sh 'docker build -t portfolio-v2 .'
+                    sh 'docker images'
+                    
+                }
+            }
+        }
+        stage ('Push to Docker Hub') {
+            steps {
+                script {
+                    ///sh 'docker tag portfolio-v2:latest akash63/portfolio-v2:sept'
+                    ///sh 'docker push akash63/portfolio-v2:sept'
+                    docker.withRegistry('', DOCKER_PASS) {
+						docker_image = docker.build "${IMAGE_NAME}"
+					}
+					
+					docker.withRegistry('', DOCKER_PASS) {
+						docker_image.push("${IMAGE_TAG}")
+						///docker_image.push('latest')
+					}
+                }
+            }
+        }
+        stage('Run Docker Container') {
+            steps {
+                script {
+                    sh 'docker run -d -p 7000:80  portfolio-v2'
+                    sh 'docker ps -a'
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "Pipeline success"
+        }
+        failure {
+            echo "Pipeline failed"
+        }
+    }
+}
