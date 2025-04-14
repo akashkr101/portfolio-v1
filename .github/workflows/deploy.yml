@@ -1,13 +1,9 @@
-name: CI/CD for Angular with Docker
-
 on:
   push:
     branches:
       - dev
       - qa
       - prod
-      - feature/dev
-      - feature-dev
 
 jobs:
   checkout-code:
@@ -42,10 +38,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build Docker image with dynamic tag
-        run: |
-          TAG=${{ github.ref_name }}
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/portfolio-v1:$TAG .
+      - name: Build Docker image
+        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/portfolio-v1:latest .
 
   push-dockerhub:
     name: Push Docker Image to DockerHub
@@ -57,25 +51,22 @@ jobs:
       - name: Log in to DockerHub
         run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-      - name: Push Docker image with dynamic tag
+      - name: Push Docker image
         run: |
-          TAG=${{ github.ref_name }}
-          docker push ${{ secrets.DOCKER_USERNAME }}/portfolio-v1:$TAG
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/portfolio-v1:latest .
+          docker push ${{ secrets.DOCKER_USERNAME }}/portfolio-v1:latest
 
   run-container:
     name: Run Docker Container
     runs-on: ubuntu-latest
     needs: push-dockerhub
     steps:
-      - name: Pull Docker image with dynamic tag
-        run: |
-          TAG=${{ github.ref_name }}
-          docker pull ${{ secrets.DOCKER_USERNAME }}/portfolio-v1:$TAG
+      - name: Pull Docker image
+        run: docker pull ${{ secrets.DOCKER_USERNAME }}/portfolio-v1:latest
 
       - name: Run Docker container
         run: |
-          TAG=${{ github.ref_name }}
-          docker run -d -p 8080:80 --name portfolio-v1 ${{ secrets.DOCKER_USERNAME }}/portfolio-v1:$TAG
+          docker run -d -p 8080:80 --name portfolio-v1 ${{ secrets.DOCKER_USERNAME }}/portfolio-v1:latest
 
   test-container:
     name: Test Deployed Container
@@ -86,6 +77,5 @@ jobs:
         run: sleep 10
 
       - name: Test container with curl
-        run: |
-          echo "Test Pass"
-          # curl -I http://localhost:8080
+        run: echo "Test Pass"
+        # curl -I http://localhost:8080
