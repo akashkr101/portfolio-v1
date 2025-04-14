@@ -2,9 +2,9 @@ on:
   push:
     branches:
       - dev
-      - feature/dev
       - qa
       - prod
+      - feature-dev
 
 jobs:
   checkout-code:
@@ -32,17 +32,15 @@ jobs:
       - name: Build Angular app
         run: npm run build --prod
 
-    build-docker-image:
+  build-docker-image:
     name: Build Docker Image
     runs-on: ubuntu-latest
     needs: build-angular
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build Docker image with dynamic tag
-        run: |
-          TAG=${{ github.ref_name }}
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/portfolio-v1:$TAG .
+      - name: Build Docker image
+        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/portfolio-v1:latest .
 
   push-dockerhub:
     name: Push Docker Image to DockerHub
@@ -54,10 +52,10 @@ jobs:
       - name: Log in to DockerHub
         run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-      - name: Push Docker image with dynamic tag
+      - name: Push Docker image
         run: |
-          TAG=${{ github.ref_name }}
-          docker push ${{ secrets.DOCKER_USERNAME }}/portfolio-v1:$TAG
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/portfolio-v1:latest .
+          docker push ${{ secrets.DOCKER_USERNAME }}/portfolio-v1:latest
 
   run-container:
     name: Run Docker Container
