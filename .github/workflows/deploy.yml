@@ -4,6 +4,7 @@ on:
       - dev
       - qa
       - prod
+      - feature-dev
 
 jobs:
   checkout-code:
