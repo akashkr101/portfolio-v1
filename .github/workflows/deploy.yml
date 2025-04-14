@@ -78,21 +78,3 @@ jobs:
         run: echo "Test Pass"
         # Uncomment for real testing
         # curl -I http://localhost:8080
-  
-  discord-notify:
-    name: Discord Notification
-    runs-on: ubuntu-latest
-    needs: test-container  # Waits for all jobs to finish
-    if: always()           # Send message whether it fails or succeeds
-    steps:
-      - name: Send Discord notification
-        run: |
-          STATUS="✅ CI pipeline completed successfully on branch *${{ github.ref_name }}*"
-          if [ "${{ job.status }}" != "success" ]; then
-            STATUS="❌ CI pipeline failed on branch *${{ github.ref_name }}*"
-          fi
-
-          curl -H "Content-Type: application/json" \
-            -X POST \
-            -d "{\"content\": \"$STATUS\nRepo: ${{ github.repository }}\n[View Workflow](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})\"}" \
-            ${{ secrets.DISCORD_WEBHOOK_URL }}
