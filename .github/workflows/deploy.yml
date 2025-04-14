@@ -78,7 +78,8 @@ jobs:
         run: echo "Test Pass"
         # Uncomment for real testing
         # curl -I http://localhost:8080
- discord-notify:
+  
+  discord-notify:
     name: Discord Notification
     runs-on: ubuntu-latest
     needs: test-container  # Waits for all jobs to finish
