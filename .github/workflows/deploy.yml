@@ -1,20 +1,29 @@
-name: CI/CD for Angular with Docker
+name: Build and Deploy
 
 on:
   push:
     branches:
       - dev
+      - feature-dev
       - qa
       - prod
-      - feature-dev
 
 jobs:
   checkout-code:
     name: Checkout Code
     runs-on: ubuntu-latest
+    outputs:
+      safe_tag: ${{ steps.branch_tag.outputs.tag }}
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
+
+      - name: Get safe tag from branch name
+        id: branch_tag
+        run: |
+          BRANCH=${{ github.ref_name }}
+          SAFE_TAG=$(echo "$BRANCH" | tr '/' '-')
+          echo "tag=$SAFE_TAG" >> $GITHUB_OUTPUT
 
   build-angular:
     name: Build Angular App
@@ -32,7 +41,7 @@ jobs:
         run: npm install
 
       - name: Build Angular app
-        run: npm run build --prod
+        run: npm run build
 
   build-and-push:
     name: Build and Push Docker Image
@@ -76,23 +85,46 @@ jobs:
 
       - name: Test container with curl
         run: echo "Test Pass"
-        # Uncomment for real testing
+        # You can replace this with actual curl test:
         # curl -I http://localhost:8080
-  
+
   discord-notify:
     name: Discord Notification
     runs-on: ubuntu-latest
-    needs: test-container  # Waits for all jobs to finish
-    if: always()           # Send message whether it fails or succeeds
+    needs: test-container
+    if: always()
     steps:
-      - name: Send Discord notification
+      - name: Send Discord notification to branch-specific channel
         run: |
-          STATUS="✅ CI pipeline completed successfully on branch *${{ github.ref_name }}*"
-          if [ "${{ job.status }}" != "success" ]; then
-            STATUS="❌ CI pipeline failed on branch *${{ github.ref_name }}*"
+          BRANCH="${{ github.ref_name }}"
+          STATUS_RESULT="${{ needs.test-container.result }}"
+
+          if [ "$STATUS_RESULT" = "success" ]; then
+            STATUS="✅ *Build passed* on branch \`$BRANCH\`"
+          else
+            STATUS="❌ *Build failed* on branch \`$BRANCH\`"
           fi
+
+          case "$BRANCH" in
+            dev)
+              WEBHOOK="${{ secrets.DISCORD_DEV_WEBHOOK }}"
+              ;;
+            feature-dev)
+              WEBHOOK="${{ secrets.DISCORD_FEATURE_WEBHOOK }}"
+              ;;
+            qa)
+              WEBHOOK="${{ secrets.DISCORD_QA_WEBHOOK }}"
+              ;;
+            prod)
+              WEBHOOK="${{ secrets.DISCORD_PROD_WEBHOOK }}"
+              ;;
+            *)
+              echo "No webhook configured for branch: $BRANCH"
+              exit 0
+              ;;
+          esac
 
           curl -H "Content-Type: application/json" \
             -X POST \
-            -d "{\"content\": \"$STATUS\nRepo: ${{ github.repository }}\n[View Workflow](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})\"}" \
-            ${{ secrets.DISCORD_WEBHOOK_URL }}
+            -d "{\"content\": \"$STATUS\n📦 Repo: ${{ github.repository }}\n🔗 [View Workflow](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})\"}" \
+            "$WEBHOOK"
