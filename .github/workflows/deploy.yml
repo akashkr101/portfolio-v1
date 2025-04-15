@@ -89,6 +89,7 @@ jobs:
 
       - name: Test container with curl
         run: echo "Test Pass"
+        # You can replace this with actual curl test:
         # curl -I http://localhost:8080
 
   discord-notify:
@@ -117,4 +118,18 @@ jobs:
               WEBHOOK="${{ secrets.DISCORD_FEATURE_WEBHOOK }}"
               ;;
             qa)
-              WEBHOOK="${{ secrets
+              WEBHOOK="${{ secrets.DISCORD_QA_WEBHOOK }}"
+              ;;
+            prod)
+              WEBHOOK="${{ secrets.DISCORD_PROD_WEBHOOK }}"
+              ;;
+            *)
+              echo "No webhook configured for branch: $BRANCH"
+              exit 0
+              ;;
+          esac
+
+          curl -H "Content-Type: application/json" \
+            -X POST \
+            -d "{\"content\": \"$STATUS\n📦 Repo: ${{ github.repository }}\n🔗 [View Workflow](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})\"}" \
+            "$WEBHOOK"
