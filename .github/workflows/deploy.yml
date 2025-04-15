@@ -99,10 +99,14 @@ jobs:
       - name: Send Discord notification to branch-specific channel
         env:
           BRANCH: ${{ github.ref_name }}
+          STATUS_DEV: ${{ needs.test-container.result }}
         run: |
-          STATUS="✅ CI pipeline completed successfully on branch *$BRANCH*"
-          if [ "${{ job.status }}" != "success" ]; then
-            STATUS="❌ CI pipeline failed on branch *$BRANCH*"
+          BRANCH_SAFE=$(echo "$BRANCH" | tr '/' '-')
+          
+          if [ "$STATUS_DEV" = "success" ]; then
+            STATUS="✅ *Build passed* on branch \`$BRANCH\`"
+          else
+            STATUS="❌ *Build failed* on branch \`$BRANCH\`"
           fi
 
           case "$BRANCH" in
@@ -126,5 +130,6 @@ jobs:
 
           curl -H "Content-Type: application/json" \
             -X POST \
-            -d "{\"content\": \"$STATUS\nRepo: ${{ github.repository }}\n[View Workflow](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})\"}" \
+            -d "{\"content\": \"$STATUS\n📦 Repo: ${{ github.repository }}\n🔗 [View Workflow](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})\"}" \
             "$WEBHOOK"
+
