@@ -3,7 +3,7 @@
 
 FROM node:latest AS build
 
-# Set the working directory in the container
+# Set the working directory in the container #
 WORKDIR /app
 
 # Copy the package.json and package-lock.json files into the container at /app
