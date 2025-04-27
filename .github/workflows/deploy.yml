@@ -11,7 +11,7 @@ on:
 jobs:
   checkout-code:
     name: Checkout Code
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     outputs:
       safe_tag: ${{ steps.branch_tag.outputs.tag }}
     steps:
@@ -27,7 +27,7 @@ jobs:
 
   build-angular:
     name: Build Angular App
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: checkout-code
     steps:
       - uses: actions/checkout@v4
@@ -45,7 +45,7 @@ jobs:
 
   build-and-push:
     name: Build and Push Docker Image
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: build-angular
     steps:
       - uses: actions/checkout@v4
@@ -62,7 +62,7 @@ jobs:
 
   run-container:
     name: Run Docker Container
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: build-and-push
     steps:
       - name: Pull Docker image
@@ -77,7 +77,7 @@ jobs:
 
   test-container:
     name: Test Deployed Container
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: run-container
     steps:
       - name: Wait for container to be ready
@@ -90,7 +90,7 @@ jobs:
 
   discord-notify:
     name: Discord Notification
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: test-container
     if: always()
     steps:
