@@ -5,9 +5,7 @@ on:
     branches:
       - uat
 
-env:
-  DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/my-angular-app:${{ github.ref_name }}-${{ github.run_number }}
-
+#Checkout
 jobs:
   checkout:
     name: Checkout Source Code
@@ -15,104 +13,16 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
-
+	  
+#Install Dependencies
   setup-node:
     name: Setup Node.js
     runs-on: ubuntu-latest
     needs: checkout
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-
-      - name: Install Dependencies
-        run: |
-          npm install
-          
-  sonarqube-scan:
-    name: SonarQube Scan
-    runs-on: ubuntu-latest
-    needs: setup-node
-    steps:
-    - name: SonarQube Analysis
-      uses: sonarsource/sonarcloud-github-action@v2
+    - name: Setup Node
+      uses: actions/setup-node@v4
       with:
-        projectBaseDir: .
-      env:
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
-  quality-gate-check:
-    name: Quality Gate Check
-    runs-on: ubuntu-latest
-    needs: sonarqube-scan
-    steps:
-    - name: Wait for Quality Gate
-      uses: sonarsource/sonarcloud-quality-gate-action@v1
-      env:
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
-  trivy-scan:
-    name: Trivy Vulnerability Scan
-    runs-on: ubuntu-latest
-    needs: quality-gate-check
-    steps:
-    - name: Trivy Filesystem Scan
-      uses: aquasecurity/trivy-action@v0.11.2
-      with:
-        scan-type: 'fs'
-        scan-ref: '.'
-
-  angular-build:
-    name: Build Angular App
-    runs-on: ubuntu-latest
-    needs: trivy-scan
-    steps:
-    - name: Build Angular
-      run: npm run build -- --configuration production
-
-  docker-build-push:
-    name: Build and Push Docker Image
-    runs-on: ubuntu-latest
-    needs: angular-build
-    steps:
-    - name: Docker Build
-      run: docker build -t $DOCKER_IMAGE .
-    - name: DockerHub Login
-      run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
-    - name: Push Docker Image
-      run: docker push $DOCKER_IMAGE
-
-  notify:
-    name: Notifications
-    runs-on: ubuntu-latest
-    needs: docker-build-push
-    if: always()
-    steps:
-    - name: Discord Notification - Build Complete
-      uses: Ilshidur/action-discord@master
-      with:
-        webhook: ${{ secrets.DISCORD_WEBHOOK }}
-        message: |
-          **Build Completed:** `${{ github.workflow }}` for branch `${{ github.ref_name }}`
-          Status: ${{ job.status }}
-
-    #- name: Gmail Report - Build Complete
-    #  uses: dawidd6/action-send-mail@v3
-    #  with:
-    #    server_address: smtp.gmail.com
-    #    server_port: 465
-    #    username: ${{ secrets.SMTP_USERNAME }}
-    #    password: ${{ secrets.SMTP_PASSWORD }}
-    #    subject: Build Report: ${{ job.status }} - ${{ github.ref_name }}
-    #    to: your-email@gmail.com
-    #    from: ${{ secrets.SMTP_USERNAME }}
-    #    content_type: text/html
-    #    body: |
-    #      <h3>Build Report</h3>
-    #      <p><strong>Repository:</strong> ${{ github.repository }}</p>
-    #      <p><strong>Branch:</strong> ${{ github.ref_name }}</p>
-    #      <p><strong>Status:</strong> ${{ job.status }}</p>
+        node-version: '20'
+    - name: Install npm Dependencies
+      run: npm install
