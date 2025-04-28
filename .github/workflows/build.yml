@@ -34,16 +34,31 @@ jobs:
           npm install
 
   lint-test:
-    name: Lint and Unit Test
-    runs-on: ubuntu-latest
-    needs: setup-node
-    steps:
+  name: Lint and Unit Test
+  runs-on: ubuntu-latest
+  needs: setup-node
+
+  steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Install Dependencies
+      run: npm install
+      working-directory: ./portfolio-v1   # ✅ This is correct path
+
     - name: Lint Code
       run: npm run lint
-      working-directory: ./portfolio-v1
+      working-directory: ./portfolio-v1   # ✅ This is correct path
+
     - name: Run Unit Tests
       run: npm run test -- --watch=false --browsers=ChromeHeadless
-      working-directory: ./portfolio-v1
+      working-directory: ./portfolio-v1   # ✅ This is correct path
+
 
   sonarqube-scan:
     name: SonarQube Scan
