@@ -1,27 +1,24 @@
+---
 name: Build Angular App and Docker Image
-
 on:
   push:
     branches:
       - uat
-
-#Checkout
 jobs:
   checkout:
     name: Checkout Source Code
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-#Install Dependencies
+      - name: Checkout
+        uses: actions/checkout@v4
   setup-node:
     name: Setup Node.js
     runs-on: ubuntu-latest
     needs: checkout
     steps:
-    - name: Setup Node
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-    - name: Install npm Dependencies
-      run: npm install
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install npm Dependencies
+        run: npm install
