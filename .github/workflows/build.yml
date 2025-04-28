@@ -21,23 +21,22 @@ jobs:
     runs-on: ubuntu-latest
     needs: checkout
     steps:
-    - name: Setup Node
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-  install-deps:
-    name: Install Dependencies
-    runs-on: ubuntu-latest
-    needs: setup-node
-    steps:
-    - name: Install npm Dependencies
-      run: npm install
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install Dependencies
+        run: |
+          npm install
 
   lint-test:
     name: Lint and Unit Test
     runs-on: ubuntu-latest
-    needs: install-deps
+    needs: setup-node
     steps:
     - name: Lint Code
       run: npm run lint
