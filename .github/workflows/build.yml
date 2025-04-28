@@ -22,3 +22,4 @@ jobs:
           node-version: "20"
       - name: Install npm Dependencies
         run: npm install
+        working-directory: ./portfolio-v1
