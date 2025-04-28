@@ -1,17 +1,9 @@
 name: Build Angular App and Docker Image
 
 on:
-  workflow_dispatch:
-    inputs:
-      environment:
-        description: 'Select environment'
-        required: true
-        default: 'dev'
-        type: choice
-        options:
-          - dev
-          - qa
-          - prod
+  push:
+    branches:
+      - uat
 
 env:
   DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/my-angular-app:${{ github.ref_name }}-${{ github.run_number }}
