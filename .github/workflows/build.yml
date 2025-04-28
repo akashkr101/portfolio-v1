@@ -40,8 +40,10 @@ jobs:
     steps:
     - name: Lint Code
       run: npm run lint
+      working-directory: ./portfolio-v1
     - name: Run Unit Tests
       run: npm run test -- --watch=false --browsers=ChromeHeadless
+      working-directory: ./portfolio-v1
 
   sonarqube-scan:
     name: SonarQube Scan
