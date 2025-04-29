@@ -30,15 +30,12 @@ jobs:
     needs: checkout-code
     steps:
       - uses: actions/checkout@v4
-
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 18
-
       - name: Install dependencies
         run: npm install
-
       - name: Build Angular app
         run: npm run build
         
@@ -71,10 +68,8 @@ jobs:
     needs: sonarqube
     steps:
       - uses: actions/checkout@v4
-
       - name: Log in to DockerHub
         run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-
       - name: Build and push Docker image with branch-based tag
         run: |
           TAG=$(echo "${{ github.ref_name }}" | sed 's/\//-/g')
@@ -91,7 +86,6 @@ jobs:
         run: |
           TAG=$(echo "${{ github.ref_name }}" | sed 's/\//-/g')
           docker pull ${{ secrets.DOCKER_USERNAME }}/portfolio-v1:$TAG
-
       - name: Run Docker container
         run: |
           TAG=$(echo "${{ github.ref_name }}" | sed 's/\//-/g')
@@ -104,7 +98,6 @@ jobs:
     steps:
       - name: Wait for container to be ready
         run: sleep 10
-
       - name: Test container with curl
         run: echo "Test Pass"
         # You can replace this with actual curl test:
@@ -120,13 +113,11 @@ jobs:
         run: |
           BRANCH="${{ github.ref_name }}"
           STATUS_RESULT="${{ needs.test-container.result }}"
-
           if [ "$STATUS_RESULT" = "success" ]; then
             STATUS="✅ *Build passed* on branch \`$BRANCH\`"
           else
             STATUS="❌ *Build failed* on branch \`$BRANCH\`"
           fi
-
           case "$BRANCH" in
             dev)
               WEBHOOK="${{ secrets.DISCORD_DEV_WEBHOOK }}"
