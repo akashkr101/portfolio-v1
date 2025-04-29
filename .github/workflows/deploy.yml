@@ -68,7 +68,7 @@ jobs:
   build-and-push:
     name: Build and Push Docker Image
     runs-on: self-hosted
-    needs: build-angular
+    needs: sonarqube
     steps:
       - uses: actions/checkout@v4
 
