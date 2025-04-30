@@ -2,8 +2,8 @@ import requests
 import pandas as pd
 import os
 
-SONAR_URL = "https://your-sonarqube-host"
-PROJECT_KEY = "your_project_key"
+SONAR_URL = "http://51.20.87.70:9000"
+PROJECT_KEY = "portfolio"
 AUTH_TOKEN = os.getenv("SONAR_TOKEN")
 
 headers = {
@@ -11,9 +11,9 @@ headers = {
 }
 
 response = requests.get(
-    f"{SONAR_URL}/api/issues/search",
+    f"{http://51.20.87.70:9000}/api/issues/search",
     params={
-        "componentKeys": PROJECT_KEY,
+        "componentKeys": portfolio,
         "types": "BUG,VULNERABILITY,CODE_SMELL",
         "ps": 500  # page size
     },
