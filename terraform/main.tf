@@ -1,19 +1,17 @@
 provider "aws" {
-  region     = var.region
+  region     = "us-east-1"
   access_key = var.aws_access_key
   secret_key = var.aws_secret_key
 }
 
-resource "aws_security_group" "sonarqube_sg" {
-  name        = "sonarqube-sg"
-  description = "Allow SSH and SonarQube UI access"
+resource "aws_key_pair" "deployer" {
+  key_name   = "deployer-key"
+  public_key = file("~/.ssh/id_rsa.pub")
+}
 
-  ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+resource "aws_security_group" "allow_9000" {
+  name        = "allow_9000"
+  description = "Allow port 9000"
 
   ingress {
     from_port   = 9000
@@ -30,13 +28,23 @@ resource "aws_security_group" "sonarqube_sg" {
   }
 }
 
-resource "aws_instance" "sonarqube" {
-  ami                    = "ami-0c55b159cbfafe1f0" # Amazon Linux 2 in us-east-1
-  instance_type          = "t2.medium"
-  key_name               = var.key_name
-  vpc_security_group_ids = [aws_security_group.sonarqube_sg.id]
+resource "aws_instance" "docker_vm" {
+  ami           = "ami-0c02fb55956c7d316" # Amazon Linux 2
+  instance_type = "t3.medium"
+  key_name      = aws_key_pair.deployer.key_name
+  security_groups = [aws_security_group.allow_9000.name]
+
+  user_data = <<-EOF
+              #!/bin/bash
+              yum update -y
+              amazon-linux-extras install docker -y
+              systemctl start docker
+              systemctl enable docker
+              usermod -aG docker ec2-user
+              docker run -d -p 9000:9000 portainer/portainer-ce
+              EOF
 
   tags = {
-    Name = "SonarQube-Server"
+    Name = "DockerVM"
   }
 }
