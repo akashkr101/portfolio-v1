@@ -29,8 +29,8 @@ resource "aws_security_group" "allow_9000" {
 }
 
 resource "aws_instance" "docker_vm" {
-  ami           = "ami-0c02fb55956c7d316" # Amazon Linux 2
-  instance_type = "t3.medium"
+  ami           = "ami-0e35ddab05955cf57" # Amazon Linux 2
+  instance_type = "t2.medium"
   key_name      = aws_key_pair.deployer.key_name
   security_groups = [aws_security_group.allow_9000.name]
 
