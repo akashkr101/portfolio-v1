@@ -61,6 +61,29 @@ jobs:
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }} #OPTIONAL
+        
+  generate-report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Install Python packages
+        run: |
+          pip install requests pandas openpyxl
+      - name: Generate Excel report from SonarQube
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          python scripts/generate_sonar_report.py
+      - name: Upload Excel Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: sonarqube-report
+          path: sonarqube_report.xlsx
    
   build-and-push:
     name: Build and Push Docker Image
